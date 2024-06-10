@@ -1,0 +1,84 @@
+﻿@page "/"
+
+<h1>Cose da fare!</h1>
+<input type="text" @bind="toDoItemToAdd.Title" />
+<input type="date" @bind="toDoItemToAdd.Due" />
+<button @onclick="ButtonAdd_Click">Add</button>
+
+@foreach (var item in MyList)
+{
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h5 class="card-title">@item.Title</h5>
+            <h6 class="card-subtitle mb-2 text-muted">@item.Due</h6>
+            <input type="checkbox" @bind="@item.Done" @oninput="()=>UpdateItem(item.Id)" />            
+            <button class="btn btn-outline-danger" @onclick="()=>ButtonDeleteTodo_Click(item)">delete</button>
+        </div>
+    </div>
+    
+}
+<button class="btn btn-outline-warning" @onclick="ButtonSave_Click" disabled="@(!toSave)">Save</button>
+<button class="btn btn-outline-danger" @onclick="ButtonDelete_Click" >Cancella i conclusi</button>
+
+
+
+
+@code {
+    public ToDoItem toDoItemToAdd { get; set; } = new ToDoItem();
+    public List<ToDoItem> MyList { get; set; } = new List<ToDoItem>();
+    Datasource myDb = new Datasource();
+    bool toSave = false;
+    async void ButtonAdd_Click()
+    {
+        toDoItemToAdd.Done = false;
+        //toDoItemToAdd.Due = DateTime.Now;
+        var resp=myDb.AddTodo(toDoItemToAdd);
+        MyList = await myDb.GetTodos();
+        toDoItemToAdd = new ToDoItem();
+    }
+
+    async void ButtonSave_Click()
+    {
+
+        foreach (var item in MyList)
+        {
+            await myDb.UpdateTodo(item);
+        }
+        toSave = false;
+    }
+    //cancella tutti gli impegni segnati come fatti
+    async void ButtonDelete_Click()
+    {
+
+        foreach (var item in MyList)
+        {
+            
+            if(item.Done) await myDb.DeleteTodo(item);
+        }
+        MyList = await myDb.GetTodos();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Datasource myDb = new Datasource();
+        MyList = await myDb.GetTodos();
+    }
+
+    void UpdateItem(int Id)
+    {
+        //viene chiamato ad ogni variazione dell'input
+        toSave = true;
+
+    }
+
+    async void  ButtonDeleteTodo_Click(ToDoItem item)
+    {
+        
+        bool answer = await Application.Current.MainPage.DisplayAlert("Cancella?", $"Rimuovi toDo {item.Title}", "Si", "No");
+        if (answer) await myDb.DeleteTodo(item);
+
+        MyList = await myDb.GetTodos();
+        StateHasChanged();
+
+    }
+}
