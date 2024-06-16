@@ -16,5 +16,7 @@ namespace MauiBlazorToDo.Models
         public DateTime Due { get; set; }= DateTime.Now;
 
         public bool Done { get; set; } = false;
+
+        public string Image { get; set; } = "";
     }
 }

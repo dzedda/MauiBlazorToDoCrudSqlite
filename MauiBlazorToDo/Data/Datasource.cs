@@ -20,11 +20,21 @@ namespace MauiBlazorToDo.Data
                 SqliteCommand myCommand;
                 myConnection = new SqliteConnection("Data Source=" + dataSourceString);
                 //creo il command 
-                myCommand = new SqliteCommand("CREATE TABLE tblTodos (Id INTEGER  PRIMARY KEY AUTOINCREMENT,Title TEXT,Due   DATETIME, Done  BOOL DEFAULT (false));");
+                myCommand = new SqliteCommand("CREATE TABLE tblTodos (Id INTEGER  PRIMARY KEY AUTOINCREMENT,Title TEXT,Due   DATETIME, Done  BOOL DEFAULT (false), Image TEXT DEFAULT '');");
                 myCommand.Connection = myConnection;
 
                 myConnection.Open();
-                var resp = await myCommand.ExecuteNonQueryAsync();
+                try
+                {
+                    var resp = await myCommand.ExecuteNonQueryAsync();
+
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+                
                 myConnection.Close();
             }
         }
@@ -34,14 +44,16 @@ namespace MauiBlazorToDo.Data
             await InitDB();
             using (SqliteConnection myConn = new SqliteConnection("Data Source=" + dataSourceString))
             {
-                SqliteCommand myCommand = new SqliteCommand("INSERT INTO tblTodos (Title,Due,Done) VALUES (@par1,@par2,@par3);  SELECT last_insert_rowid();");
+                SqliteCommand myCommand = new SqliteCommand("INSERT INTO tblTodos (Title,Due,Done,Image) VALUES (@par1,@par2,@par3,@par4);  SELECT last_insert_rowid();");
                 myCommand.Connection = myConn;
                 SqliteParameter myPar = new SqliteParameter("@par1", item.Title);
                 SqliteParameter myPar2 = new SqliteParameter("@par2", item.Due);
                 SqliteParameter myPar3 = new SqliteParameter("@par3", item.Done);
+                SqliteParameter myPar4 = new SqliteParameter("@par4", item.Image);
                 myCommand.Parameters.Add(myPar);
                 myCommand.Parameters.Add(myPar2);
                 myCommand.Parameters.Add(myPar3);
+                myCommand.Parameters.Add(myPar4);
                 myConn.Open();                
                 item.Id =Convert.ToInt32(await myCommand.ExecuteScalarAsync());
 
@@ -71,7 +83,8 @@ namespace MauiBlazorToDo.Data
                             Id = Convert.ToInt32(mydr["id"]),
                             Title = mydr["Title"].ToString(),
                             Due =DateTime.Parse(mydr["Due"].ToString()),
-                            Done = Convert.ToBoolean(mydr["Done"])
+                            Done = Convert.ToBoolean(mydr["Done"]),
+                            Image = Convert.ToString(mydr["Image"])
                         };
                         myList.Add(item);
                     }
@@ -90,16 +103,18 @@ namespace MauiBlazorToDo.Data
             await InitDB();
             using (SqliteConnection myConn = new SqliteConnection("Data Source=" + dataSourceString))
             {
-                SqliteCommand myCommand = new SqliteCommand("UPDATE tblTodos SET Title=@par1, Due=@par2, Done =@par3 WHERE Id=@par4;");
+                SqliteCommand myCommand = new SqliteCommand("UPDATE tblTodos SET Title=@par1, Due=@par2, Done =@par3, Image=@par4 WHERE Id=@par5;");
                 myCommand.Connection = myConn;
                 SqliteParameter myPar = new SqliteParameter("@par1", item.Title);
                 SqliteParameter myPar2 = new SqliteParameter("@par2", item.Due);
                 SqliteParameter myPar3 = new SqliteParameter("@par3", item.Done);
-                SqliteParameter myPar4 = new SqliteParameter("@par4", item.Id);
+                SqliteParameter myPar4 = new SqliteParameter("@par4", item.Image);
+                SqliteParameter myPar5 = new SqliteParameter("@par5", item.Id);
                 myCommand.Parameters.Add(myPar);
                 myCommand.Parameters.Add(myPar2);
                 myCommand.Parameters.Add(myPar3);
                 myCommand.Parameters.Add(myPar4);
+                myCommand.Parameters.Add(myPar5);
                 myConn.Open();
                 await myCommand.ExecuteScalarAsync();
 

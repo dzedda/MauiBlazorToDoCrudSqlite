@@ -1,5 +1,5 @@
 ﻿@page "/"
-
+@inject IJSRuntime JSrt
 <h1>Cose da fare!</h1>
 <input type="text" @bind="toDoItemToAdd.Title" />
 <input type="date" @bind="toDoItemToAdd.Due" />
@@ -8,11 +8,17 @@
 @foreach (var item in MyList)
 {
     <div class="card" style="width: 18rem;">
+        @if (item.Image.Length>5)
+        {
+            <img src="@(photoPath(item.Image))" class="card-img-top" alt="...">
+            @(item.Image)
+        }        
         <div class="card-body">
             <h5 class="card-title">@item.Title</h5>
             <h6 class="card-subtitle mb-2 text-muted">@item.Due</h6>
             <input type="checkbox" @bind="@item.Done" @oninput="()=>UpdateItem(item.Id)" />            
             <button class="btn btn-outline-danger" @onclick="()=>ButtonDeleteTodo_Click(item)">delete</button>
+            <button @onclick="()=>CaptureImage(item) ">Capture Image</button>
         </div>
     </div>
     
@@ -21,6 +27,7 @@
 <button class="btn btn-outline-danger" @onclick="ButtonDelete_Click" >Cancella i conclusi</button>
 
 
+<img class="img-thumbnail" height="5" id="image" />
 
 
 @code {
@@ -28,6 +35,7 @@
     public List<ToDoItem> MyList { get; set; } = new List<ToDoItem>();
     Datasource myDb = new Datasource();
     bool toSave = false;
+    string dataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
     async void ButtonAdd_Click()
     {
         toDoItemToAdd.Done = false;
@@ -52,7 +60,7 @@
 
         foreach (var item in MyList)
         {
-            
+
             if(item.Done) await myDb.DeleteTodo(item);
         }
         MyList = await myDb.GetTodos();
@@ -73,12 +81,94 @@
 
     async void  ButtonDeleteTodo_Click(ToDoItem item)
     {
-        
+
         bool answer = await Application.Current.MainPage.DisplayAlert("Cancella?", $"Rimuovi toDo {item.Title}", "Si", "No");
         if (answer) await myDb.DeleteTodo(item);
 
         MyList = await myDb.GetTodos();
         StateHasChanged();
+
+    }
+    public async Task CaptureImage(ToDoItem item)
+    {
+        FileResult photo = null;
+        if (DeviceInfo.Current.Platform == DevicePlatform.WinUI || DeviceInfo.Current.Platform == DevicePlatform.MacCatalyst)
+        {
+            photo = await FilePicker.PickAsync();
+        }
+        else if (DeviceInfo.Current.Platform == DevicePlatform.Android || DeviceInfo.Current.Platform == DevicePlatform.iOS)
+        {
+            try
+            {
+                photo = await MediaPicker.CapturePhotoAsync();
+            }
+            catch (Exception e)
+            {
+
+                throw;
+            }
+
+        }
+
+        if (photo == null)
+        {
+            return;
+        } else
+        {
+
+
+        }
+        string filePath = "";
+        using (var stream = await photo.OpenReadAsync())
+        {
+
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                stream.CopyTo(memoryStream);
+
+                filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + photo.FileName);
+                File.WriteAllBytes(filePath, memoryStream.ToArray());
+
+            }
+
+
+
+            item.Image = DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + photo.FileName;
+            await myDb.UpdateTodo(item);
+            MyList = await myDb.GetTodos();
+            StateHasChanged();
+            /*
+            var dotnetImageStream = new DotNetStreamReference(stream);
+
+
+                try
+                {
+                await JSrt.InvokeAsync<bool>("jsFunctions.captureImage", "image", dotnetImageStream);
+            }
+            catch (Exception e)
+        {
+
+        throw;
+        }
+        */
+        }
+
+    }
+    /// <summary>
+    /// non è possibile usare la directory wwwroot ufffffffff
+    /// </summary>
+    /// <param name="filename"></param>
+    /// <returns></returns>
+    public string photoPath(string filename)
+    {
+        string result;
+        var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), filename);
+        var test=FileSystem.Current.AppDataDirectory;
+        var test2 = FileSystem.Current.CacheDirectory;
+        var imageBytes = File.ReadAllBytes(filePath);
+        result = Convert.ToBase64String(imageBytes);
+        result = string.Format("data:image/png;base64,{0}", result);
+        return result;
 
     }
 }
