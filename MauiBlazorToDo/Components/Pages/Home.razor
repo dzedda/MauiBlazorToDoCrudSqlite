@@ -35,7 +35,7 @@
     public List<ToDoItem> MyList { get; set; } = new List<ToDoItem>();
     Datasource myDb = new Datasource();
     bool toSave = false;
-    string dataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    string dataPath = FileSystem.Current.AppDataDirectory;
     async void ButtonAdd_Click()
     {
         toDoItemToAdd.Done = false;
@@ -126,7 +126,7 @@
             {
                 stream.CopyTo(memoryStream);
 
-                filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + photo.FileName);
+                filePath = Path.Combine(FileSystem.Current.AppDataDirectory, DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + photo.FileName);
                 File.WriteAllBytes(filePath, memoryStream.ToArray());
 
             }
@@ -162,8 +162,8 @@
     public string photoPath(string filename)
     {
         string result;
-        var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), filename);
-        var test=FileSystem.Current.AppDataDirectory;
+        var filePath = Path.Combine(FileSystem.Current.AppDataDirectory, filename);
+        var test=FileSystem.Current.AppDataDirectory; //todo sostituire a environment ..... 
         var test2 = FileSystem.Current.CacheDirectory;
         var imageBytes = File.ReadAllBytes(filePath);
         result = Convert.ToBase64String(imageBytes);

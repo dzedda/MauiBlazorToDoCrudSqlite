@@ -10,8 +10,9 @@ namespace MauiBlazorToDo.Data
 {
     public class Datasource
     {
-        public static string dataSourceString = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"todo.db");
-
+        //public static string dataSourceString = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"todo.db");
+        public static string dataSourceString = Path.Combine(FileSystem.Current.AppDataDirectory, @"todo.db");
+       
         public async static Task InitDB()
         {
             if (!File.Exists(dataSourceString))
